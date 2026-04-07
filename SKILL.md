@@ -21,6 +21,6 @@ This skill allows Gemini CLI to interact with Jira issues at your organization's
 
 ## Usage Guidelines
 
-1. **Summarization**: Use `get_issue` to fetch data, then provide a concise summary or extract action items.
+1. **Summarization**: Use `get_issue` to fetch data, then provide a concise summary. **Always** include the **Work Type** (issue_type) and the **Parent** ticket (if applicable) in your summary.
 2. **Commentary**: After a task (like code refactoring or bug investigation), you can use `add_comment` to update the Jira ticket.
 3. **Status Check**: Use `get_issue` to verify the current status or assignee before starting work.

@@ -69,6 +69,7 @@ def get_issue(issue_key):
         "key": issue_key,
         "summary": fields.get('summary', 'No summary'),
         "status": (fields.get('status') or {}).get('name', 'Unknown'),
+        "issue_type": (fields.get('issuetype') or {}).get('name', 'Unknown'),
         "reporter": (fields.get('reporter') or {}).get('displayName', 'Unknown'),
         "assignee": (fields.get('assignee') or {}).get('displayName', 'Unassigned'),
         "url": f"{JIRA_URL}/browse/{issue_key}",
