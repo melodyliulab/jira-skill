@@ -19,7 +19,7 @@ This skill uses the **`pass`** (Unix password manager) to store and retrieve cre
    ```
 2. **Install the skill** in Gemini CLI:
    ```bash
-   gemini skills install https://github.com/melodyliu1986/jira-skill
+   gemini skills install https://github.com/melodyliulab/jira-skill
    ```
 3. **Reload Skills**:
    In your Gemini CLI session, run:
