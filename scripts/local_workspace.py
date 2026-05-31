@@ -2,6 +2,19 @@
 import sys
 import subprocess
 import os
+import requests
+
+JIRA_BASE_URL = "https://company.atlassian.net/rest/api/2/issue"
+
+def _get_jira_auth():
+    """Retrieve Jira credentials from environment variables."""
+    email = os.environ.get("JIRA_EMAIL")
+    token = os.environ.get("JIRA_TOKEN")
+    if not email or not token:
+        raise EnvironmentError(
+            "JIRA_EMAIL and JIRA_TOKEN environment variables must be set."
+        )
+    return (email, token)
 
 def create_branch(issue_key):
     """Create a new git branch for the issue."""
@@ -26,15 +39,79 @@ def draft_release_notes(issue_key, text):
     except Exception as e:
         print(f"Error writing to file: {e}")
 
+def get_jira_ticket(issue_key):
+    """Retrieve details for a Jira issue by its key.
+
+    Args:
+        issue_key: The Jira issue key (e.g. 'PROJ-001').
+
+    Returns:
+        A dict containing the issue data returned by the Jira API.
+
+    Raises:
+        EnvironmentError: If Jira credentials are not set.
+        requests.HTTPError: If the API returns an error status.
+    """
+    try:
+        auth = _get_jira_auth()
+        response = requests.get(
+            f"{JIRA_BASE_URL}/{issue_key}",
+            auth=auth,
+        )
+        response.raise_for_status()
+        return response.json()
+    except EnvironmentError:
+        raise
+    except requests.HTTPError as e:
+        print(f"HTTP error retrieving ticket {issue_key}: {e}")
+        raise
+    except requests.RequestException as e:
+        print(f"Request error retrieving ticket {issue_key}: {e}")
+        raise
+
+def update_ticket(issue_key, status):
+    """Update the status of a Jira issue.
+
+    Args:
+        issue_key: The Jira issue key (e.g. 'PROJ-001').
+        status: The new status value to set on the issue.
+
+    Raises:
+        EnvironmentError: If Jira credentials are not set.
+        requests.HTTPError: If the API returns an error status.
+    """
+    try:
+        auth = _get_jira_auth()
+        response = requests.put(
+            f"{JIRA_BASE_URL}/{issue_key}",
+            auth=auth,
+            json={"fields": {"status": status}},
+        )
+        response.raise_for_status()
+        return response
+    except EnvironmentError:
+        raise
+    except requests.HTTPError as e:
+        print(f"HTTP error updating ticket {issue_key}: {e}")
+        raise
+    except requests.RequestException as e:
+        print(f"Request error updating ticket {issue_key}: {e}")
+        raise
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python local_workspace.py <action> [args...]")
         sys.exit(1)
-    
+
     action = sys.argv[1]
     if action == "create_branch" and len(sys.argv) >= 3:
         create_branch(sys.argv[2])
     elif action == "draft_release_notes" and len(sys.argv) >= 4:
         draft_release_notes(sys.argv[2], sys.argv[3])
+    elif action == "get_jira_ticket" and len(sys.argv) >= 3:
+        result = get_jira_ticket(sys.argv[2])
+        print(result)
+    elif action == "update_ticket" and len(sys.argv) >= 4:
+        update_ticket(sys.argv[2], sys.argv[3])
     else:
         print(f"Unknown action or missing arguments for action: '{action}'")
