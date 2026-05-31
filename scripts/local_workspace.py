@@ -38,35 +38,3 @@ if __name__ == "__main__":
         draft_release_notes(sys.argv[2], sys.argv[3])
     else:
         print(f"Unknown action or missing arguments for action: '{action}'")
-
-
-import requests
-import json
-
-# 故意留下的问题：
-# 1. hardcoded credentials
-# 2. 没有error handling
-# 3. 没有注释
-# 4. 变量名不清晰
-
-JIRA_TOKEN = "hardcoded_secret_token_12345"
-JIRA_EMAIL = "user@company.com"
-
-def get_jira_ticket(x):
-    r = requests.get(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
-        auth=(JIRA_EMAIL, JIRA_TOKEN)
-    )
-    data = r.json()
-    return data
-
-def update_ticket(x, y):
-    r = requests.put(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
-        auth=(JIRA_EMAIL, JIRA_TOKEN),
-        json={"fields": {"status": y}}
-    )
-    return r
-
-result = get_jira_ticket("PROJ-001")
-print(result)
