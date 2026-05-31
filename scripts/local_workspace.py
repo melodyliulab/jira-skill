@@ -2,6 +2,11 @@
 import sys
 import subprocess
 import os
+import requests
+
+JIRA_BASE_URL = "https://company.atlassian.net/rest/api/2/issue"
+JIRA_TOKEN = os.environ.get("JIRA_TOKEN")
+JIRA_EMAIL = os.environ.get("JIRA_EMAIL")
 
 def create_branch(issue_key):
     """Create a new git branch for the issue."""
@@ -26,47 +31,73 @@ def draft_release_notes(issue_key, text):
     except Exception as e:
         print(f"Error writing to file: {e}")
 
+def get_jira_ticket(issue_key):
+    """Retrieve details for a JIRA issue by its key.
+
+    Args:
+        issue_key: The JIRA issue key (e.g. 'PROJ-001').
+
+    Returns:
+        A dict containing the issue details, or None on failure.
+    """
+    if not JIRA_TOKEN or not JIRA_EMAIL:
+        print("Error: JIRA_TOKEN and JIRA_EMAIL environment variables must be set.")
+        return None
+    try:
+        response = requests.get(
+            f"{JIRA_BASE_URL}/{issue_key}",
+            auth=(JIRA_EMAIL, JIRA_TOKEN),
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP error fetching ticket {issue_key}: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Request error fetching ticket {issue_key}: {e}")
+    return None
+
+def update_ticket(issue_key, status):
+    """Update the status of a JIRA issue.
+
+    Args:
+        issue_key: The JIRA issue key (e.g. 'PROJ-001').
+        status: The new status value to set.
+
+    Returns:
+        True if the update succeeded, False otherwise.
+    """
+    if not JIRA_TOKEN or not JIRA_EMAIL:
+        print("Error: JIRA_TOKEN and JIRA_EMAIL environment variables must be set.")
+        return False
+    try:
+        response = requests.put(
+            f"{JIRA_BASE_URL}/{issue_key}",
+            auth=(JIRA_EMAIL, JIRA_TOKEN),
+            json={"fields": {"status": status}},
+        )
+        response.raise_for_status()
+        return True
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP error updating ticket {issue_key}: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Request error updating ticket {issue_key}: {e}")
+    return False
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python local_workspace.py <action> [args...]")
         sys.exit(1)
-    
+
     action = sys.argv[1]
     if action == "create_branch" and len(sys.argv) >= 3:
         create_branch(sys.argv[2])
     elif action == "draft_release_notes" and len(sys.argv) >= 4:
         draft_release_notes(sys.argv[2], sys.argv[3])
+    elif action == "get_jira_ticket" and len(sys.argv) >= 3:
+        result = get_jira_ticket(sys.argv[2])
+        print(result)
+    elif action == "update_ticket" and len(sys.argv) >= 4:
+        success = update_ticket(sys.argv[2], sys.argv[3])
+        sys.exit(0 if success else 1)
     else:
         print(f"Unknown action or missing arguments for action: '{action}'")
-
-
-import requests
-import json
-
-# 故意留下的问题：
-# 1. hardcoded credentials
-# 2. 没有error handling
-# 3. 没有注释
-# 4. 变量名不清晰
-
-JIRA_TOKEN = "hardcoded_secret_token_12345"
-JIRA_EMAIL = "user@company.com"
-
-def get_jira_ticket(x):
-    r = requests.get(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
-        auth=(JIRA_EMAIL, JIRA_TOKEN)
-    )
-    data = r.json()
-    return data
-
-def update_ticket(x, y):
-    r = requests.put(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
-        auth=(JIRA_EMAIL, JIRA_TOKEN),
-        json={"fields": {"status": y}}
-    )
-    return r
-
-result = get_jira_ticket("PROJ-001")
-print(result)
