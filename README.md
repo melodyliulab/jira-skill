@@ -32,4 +32,3 @@ This skill uses the **`pass`** (Unix password manager) to store and retrieve cre
 - "Gemini, check the status and reporter of PROJ-456"
 - "Gemini, add a comment to PROJ-789 saying 'This is fixed in the latest PR'"
 
-## Try the coderabbit
