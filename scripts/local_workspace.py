@@ -2,6 +2,7 @@
 import sys
 import subprocess
 import os
+import requests
 
 def create_branch(issue_key):
     """Create a new git branch for the issue."""
@@ -40,33 +41,21 @@ if __name__ == "__main__":
         print(f"Unknown action or missing arguments for action: '{action}'")
 
 
-import requests
-import json
+JIRA_TOKEN = os.environ.get("JIRA_TOKEN")
+JIRA_EMAIL = os.environ.get("JIRA_EMAIL")
 
-# 故意留下的问题：
-# 1. hardcoded credentials
-# 2. 没有error handling
-# 3. 没有注释
-# 4. 变量名不清晰
-
-JIRA_TOKEN = "hardcoded_secret_token_12345"
-JIRA_EMAIL = "user@company.com"
-
-def get_jira_ticket(x):
+def get_jira_ticket(issue_key):
     r = requests.get(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
+        f"https://company.atlassian.net/rest/api/2/issue/{issue_key}",
         auth=(JIRA_EMAIL, JIRA_TOKEN)
     )
     data = r.json()
     return data
 
-def update_ticket(x, y):
+def update_ticket(issue_key, status):
     r = requests.put(
-        f"https://company.atlassian.net/rest/api/2/issue/{x}",
+        f"https://company.atlassian.net/rest/api/2/issue/{issue_key}",
         auth=(JIRA_EMAIL, JIRA_TOKEN),
-        json={"fields": {"status": y}}
+        json={"fields": {"status": status}}
     )
     return r
-
-result = get_jira_ticket("PROJ-001")
-print(result)
